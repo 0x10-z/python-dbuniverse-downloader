@@ -11,7 +11,9 @@ Clone the project from github
     $ git clone git@github.com:iocio005/python-dbuniverse-downloader.git
     $ cd python-dbuniverse-downloader
     $ pip install -r requirements.txt
+
 *If you are using Linux distribution, first you must to install these dependencies:
+
     $ sudo apt-get install zlib1g-dev libxml2 libxml2-dev libxslt-dev build-essential python-dev
 
 ## How to use it?
