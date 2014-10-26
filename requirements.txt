@@ -1,0 +1,4 @@
+pypdf2
+requests
+reportlab
+pillow
