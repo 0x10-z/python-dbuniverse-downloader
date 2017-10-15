@@ -2,7 +2,7 @@
 
 ## Overview
 
-PDF downloader about [http://dragonball-multiverse.com](http://dragonball-multiverse.com)'s Drago Ball comic.
+PDF downloader about [http://dragonball-multiverse.com](http://dragonball-multiverse.com)'s Dragon Ball comic.
 
 ## Installation
 
@@ -30,10 +30,10 @@ Wait until the program is finished and enjoy the comic!
 
 * First release
 
-** 15th Oct 2017
+**15th Oct 2017**
 
 * Python3 support
 
-** Future improvements
+**Future improvements**
 
 * Remove cssselect in order to use xpath
