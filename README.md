@@ -12,21 +12,28 @@ Clone the project from github
     $ cd python-dbuniverse-downloader
     $ pip install -r requirements.txt
 
-*If you are using Linux distribution, first you must to install these dependencies:
+*If you are using Linux distribution, first you have to install those dependencies:
 
     $ sudo apt-get install zlib1g-dev libxml2 libxml2-dev libxslt-dev build-essential python-dev
 
 ## How to use it?
-If the last chapter in [Dragon Ball Multiverse comic](http://www.dragonball-multiverse.com/es/chapters.html) is 949...
+If the last chapter in [Dragon Ball Multiverse comic](http://www.dragonball-multiverse.com/es/chapters.html) is 1364 (2017/10/15)...
 
-    $ python dbmultiverse.py 949
+    $ python dbmultiverse.py 1364
 
 Wait until the program is finished and enjoy the comic!
 
 ## Changelog
-## 0.1
+## 0.2
 
 **26th Oct 2014**
 
 * First release
 
+** 15th Oct 2017
+
+* Python3 support
+
+** Future improvements
+
+* Remove cssselect in order to use xpath
