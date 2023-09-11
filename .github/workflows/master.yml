@@ -40,4 +40,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: collection-${{ matrix.collection }}
-          path: path_to_generated_pdfs/${{ matrix.collection }}/
+          path: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
