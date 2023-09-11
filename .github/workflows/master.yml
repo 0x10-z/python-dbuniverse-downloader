@@ -46,7 +46,9 @@ jobs:
         run: echo "CURRENT_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
       - name: Release DragonBallMultiverse-${{ matrix.collection }}.pdf
-        uses: softprops/action-gh-release@v1
+        uses: ncipollo/release-action@v1
         with:
           # token: ${{ secrets.GH_TOKEN }}
-          files: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
+          tag: ${{ env.CURRENT_DATE }}
+          commit: ${{ github.sha }}
+          artifacts: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
