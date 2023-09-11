@@ -1,39 +1,96 @@
-# python-dbuniverse-downloader
+# 🐉 python-dbuniverse-downloader
 
-## Overview
+## 🌟 Overview
 
-PDF downloader about [http://dragonball-multiverse.com](http://dragonball-multiverse.com)'s Dragon Ball comic.
+A versatile PDF downloader for the beloved Dragon Ball comic hosted on [Dragon Ball Multiverse](http://dragonball-multiverse.com). A huge shoutout and gratitude to the creators and maintainers of the Dragon Ball Multiverse website for their exceptional work and content! 💖
 
-## Installation
+## 🌈 Features:
 
-Clone the project from github
+- 📸 Download individual pages from various collections of the Dragon Ball Multiverse Universe.
+- 🎨 Convert images to PDFs, supporting both jpg and png formats!
+- 📘 Merge individual PDFs into one epic document for uninterrupted reading.
+- ⚡ Harnesses the power of multithreading to make downloads and conversions at lightning speed!
 
-    $ git clone git@github.com:iocio005/python-dbuniverse-downloader.git
-    $ cd python-dbuniverse-downloader
-    $ pip install -r requirements.txt
+## 🚀 Installation
 
-*If you are using Linux distribution, first you have to install those dependencies:
+### 1. Get the codebase
 
-    $ sudo apt-get install zlib1g-dev libxml2 libxml2-dev libxslt-dev build-essential python-dev
+Clone the project repository:
 
-## How to use it?
-If the last chapter in [Dragon Ball Multiverse comic](http://www.dragonball-multiverse.com/es/chapters.html) is 1364 (2017/10/15)...
+```bash
+$ git clone https://github.com/0x10-z/python-dbuniverse-downloader
+$ cd python-dbuniverse-downloader
+```
 
-    $ python dbmultiverse.py 1364
+### 2. Install dependencies
 
-Wait until the program is finished and enjoy the comic!
+```bash
+$ pip install -r requirements.txt
+```
 
-## Changelog
-## 0.2
+⚠️ **For Linux users**:
 
-**26th Oct 2014**
+You might need to install some extra dependencies. Here's how:
 
-* First release
+```bash
+$ sudo apt-get install zlib1g-dev libxml2 libxml2-dev libxslt-dev build-essential python-dev
+```
 
-**15th Oct 2017**
+## 📘 How to use it?
 
-* Python3 support
+To download chapters from the [Dragon Ball Multiverse comic](http://www.dragonball-multiverse.com/es/chapters.html):
+
+```bash
+$ python dbmultiverse.py <collection_name>
+```
+
+```bash
+$ python dbmultiverse.py dbmultiverse
+```
+
+**Available Collections**:
+
+- `dbmultiverse`: Main DB Multiverse series.
+- `namekseijin`: Namekseijin Densetsu series.
+- `dbm-colors`: DBMultiverse Colors series.
+- `strip`: Minicomic series.
+- `chibi-son-bra`: Chibi Son Bra did her best series.
+
+Sit back and relax ☕️. Once the program finishes, dive right into the comic! 📖
+
+## 🤓 How it works:
+
+1. **Fetching the Latest Chapter:** It first identifies the latest chapter to ensure all available ones are downloaded.
+2. **Image Download:** Each page is downloaded and stashed into a treasure chest named 'images'.
+3. **Image Processing:** Images that exceed a certain width are resized with magic.
+4. **Conversion to PDF:** All images are transformed into glorious PDFs.
+5. **Merging PDFs:** All the PDFs are combined to form a single epic document.
+
+## 📜 Changelog
+
+### 0.3
+
+📅 **11th Sept 2023**
+
+- 🌪️ Uses ThreadPoolExecutor for parallel processing, so it's faster than Frieza!
+- 🌟 Latest version of PDF and libraries updated.
+- 🎨 More comprehensive collection support added.
+- 📌 Use of `xpath`
+
+### 0.2
+
+📅 **26th Oct 2014**
+
+- 🎉 First release.
+
+📅 **15th Oct 2017**
+
+- 🐍 Added Python3 support.
 
 **Future improvements**
 
-* Remove cssselect in order to use xpath
+- 📌 Transition from `cssselect` to `xpath` for more flexibility.
+
+---
+
+Happy reading, fellow Saiyans! 🚀🌌

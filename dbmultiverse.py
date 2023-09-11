@@ -1,159 +1,239 @@
-
 import time
 import lxml.html
 import os
-from urllib.parse import urljoin
-from PyPDF2 import PdfFileMerger, PdfFileReader
+from urllib.parse import urljoin, urlparse, parse_qs
+from pypdf import PdfMerger, PdfReader
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 from PIL import Image
 import sys
 import requests
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
+import re
 
-def get_url_from_pne(path, fname, number, fext):
-    return os.path.join(path, fname+str(number)+'.'+fext)
-
-BLACK_LIST = []
-EXTRA_IMAGES = []
+# LIMIT number of pixels can be processed with PILLOW
+Image.MAX_IMAGE_PIXELS = 900000000
 ROOT_DIRECTORY = os.path.dirname(__file__)
-# Next 3 vars have to be modified in order to change output folders
-pdf_path = os.path.join(ROOT_DIRECTORY, 'pdf') # PDF folder
-img_temp = os.path.join(ROOT_DIRECTORY, 'images') # Images folder
+PDF_PATH = os.path.join(ROOT_DIRECTORY, 'pdf')
+IMG_TEMP = os.path.join(ROOT_DIRECTORY, 'images')
+PARENT_URL = 'http://www.dragonball-multiverse.com/es/'
+DOUBLE_WIDTH = 1000
+BLACK_LIST = []
 
-parent_url = 'http://www.dragonball-multiverse.com/es/'
 
-""" download all images from html """
-def download():
-    i = 0
-    aux = 0
-    for i in range(int(MAX_BOOKS)):
+def prepare_dirs(collection="dbmultiverse"):
+    """Prepare directories for images and PDFs"""
+    # Use collection name as subdirectory
+    pdf_collection_path = os.path.join(PDF_PATH, collection)
+    img_collection_path = os.path.join(IMG_TEMP, collection)
+    
+    for path in [pdf_collection_path, img_collection_path]:
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+def get_full_path(fname, number, extension, folder=IMG_TEMP, collection="dbmultiverse"):
+    """Generate full path for a given file"""
+    return os.path.join(folder, collection, f"{fname}{number}.{extension}")
+
+
+def get_link(number, collection="dbmultiverse"):
+    """Generate the appropriate link based on the page number."""
+
+    if collection == "dbmultiverse":
+        return f'https://www.dragonball-multiverse.com/es/page-{number}.html'
+    elif collection == "namekseijin":
+        return f'https://www.dragonball-multiverse.com/es/namekseijin-{number}.html'
+    elif collection == "dbm-colors":
+        return f'https://www.dragonball-multiverse.com/es/dbm-colors-{number}.html'
+    elif collection == "strip":
+        return f'https://www.dragonball-multiverse.com/es/strip-{number}.html'
+    elif collection == "chibi-son-bra":
+        return f'https://www.dragonball-multiverse.com/es/chibi-son-bra-{number}.html'
+
+def get_img_url_from_element(element, collection):
+    """Get the image URL based on the collection type and element."""
+    
+    # Define the extraction methods for each collection
+    extraction_methods = {
+        "dbmultiverse": {"attribute": "src", "regex": None},
+        "strip": {"attribute": "src", "regex": None},
+        "namekseijin": {"attribute": "style", "regex": r'background-image:url\((.*?)\)'},
+        "dbm-colors": {"attribute": "style", "regex": r'background-image:url\((.*?)\)'},
+        "chibi-son-bra": {"attribute": "style", "regex": r'background-image:url\((.*?)\)'}
+    }
+
+    # If the collection is unknown, return None
+    if collection not in extraction_methods:
+        return None
+
+    # Extract the method for the given collection
+    method = extraction_methods[collection]
+
+    # If the attribute exists in the element
+    if method["attribute"] in element.attrib:
+        # If we need to extract using a regex
+        if method["regex"]:
+            match = re.search(method["regex"], element.attrib[method["attribute"]])
+            if match:
+                return match.group(1)
+        # If we can directly return the attribute value
+        else:
+            return element.attrib[method["attribute"]]
+
+    return None
+
+
+def download_image(number, collection="dbmultiverse"):
+    """Download a single image given its number"""
+    jpg_path = get_full_path('DBM_', number, 'jpg', collection=collection)
+    png_path = get_full_path('DBM_', number, 'png', collection=collection)
+    
+    if not os.path.isfile(jpg_path) and not os.path.isfile(png_path):
+        link = get_link(number, collection)
         try:
-            if not os.path.isfile(get_url_from_pne(img_temp, 'DBM_', i, 'jpg')) and not os.path.isfile(get_url_from_pne(img_temp, 'DBM_', i, 'png')):
-                link = 'http://www.dragonball-multiverse.com/es/page-'+str(i)+'.html'
-                source = requests.get(link).content
-                html = lxml.html.fromstring(source)
-                book_title = html.cssselect('div')[7].cssselect('img')[0].get('src')
-                url=urljoin(parent_url,book_title)
-                img_format = book_title[-3:] # file ext catched (.jpg or .png)
-                img_file = open(get_url_from_pne(img_temp, 'DBM_', i, img_format),'wb') 
-                img_file.write(requests.get(url).content)
-                img_file.close()
-                time.sleep(0.5)
-                print("Downloaded in: "+get_url_from_pne(img_temp, 'DBM_', i, img_format))
-            else:
-                print("Skipping book number %s\r" %i)
+            source = requests.get(link).content
+            html = lxml.html.fromstring(source)
+            element =  html.xpath("//*[@id='balloonsimg']")[0]
+            img_url = get_img_url_from_element(element, collection)
 
-
+            if img_url:
+                full_url = urljoin(PARENT_URL, img_url)
+                img_format = parse_qs(urlparse(full_url).query).get('ext', [None])[0]
+                with open(get_full_path('DBM_', number, img_format, collection=collection), 'wb') as img_file:
+                    img_file.write(requests.get(full_url).content)
+                    
         except Exception as e:
-            print(e)
-            print("It cannot be downloaded")
-            BLACK_LIST.append(i)
-            time.sleep(.5)
+            print(f"Error downloading page {number}: {e}")
+            BLACK_LIST.append(number)
+        time.sleep(0.1)
 
+def download_images(max_books, collection="dbmultiverse"):
+    """Download images from the web using a thread pool"""
+    with ThreadPoolExecutor() as executor:
+        list(tqdm(executor.map(lambda number: download_image(number, collection), range(int(max_books))), total=int(max_books), desc="Downloading"))
+def convert_img_to_pdf(max_books, collection="dbmultiverse"):
+    """Convert images to PDF using ThreadPool."""
+    
+    # Create a list of tasks (here, the task is a page number)
+    tasks = [num for num in range(max_books) if num not in BLACK_LIST]
+    
+    # Use ThreadPoolExecutor to process images in parallel
+    with ThreadPoolExecutor() as executor:
+        list(tqdm(executor.map(lambda num: process_image(num, collection), tasks), total=len(tasks), desc="Converting to PDF"))
 
-""" merge all pdfs in one """
-def merge_pdf():
-    merger = PdfFileMerger()
-    num = 0
-    for num in range(MAX_BOOKS):
-        try:
-            if num not in BLACK_LIST:
-                merger.append(PdfFileReader(open(get_url_from_pne(pdf_path, 'DBM_', num, 'pdf'), 'rb')))
-                print('Joining page number %i...'%num)
+def process_image(num, collection="dbmultiverse"):
+    """Process individual image and convert to PDF."""
+    
+    formats = ['jpg', 'png']
+    for fmt in formats:
+        img_path = get_full_path('DBM_', num, fmt, collection=collection)
+        if os.path.isfile(img_path):
+            img = Image.open(img_path)
+            width, height = img.size
+            if width > height and width > DOUBLE_WIDTH:
+                # 2 pages images
+                page_width, page_height = 42*cm, 28*cm
+            elif width > height and width < DOUBLE_WIDTH:
+                # strip first images are small
+                page_width, page_height = width, height
             else:
-                print('The number %i is in BLACK LIST'%num)
-        except Exception as e:
-            print("PDF number %i is not exist"%num)
-    merger.write(os.path.join(ROOT_DIRECTORY,'DragonBallMultiverse.pdf'))
+                # MAYBE THIS CAN BE REFACTORED
+                page_width, page_height = width, height
+            
+            c = canvas.Canvas(get_full_path('DBM_', num, 'pdf', folder=PDF_PATH, collection=collection), pagesize=(page_width, page_height))
+            c.drawImage(img_path, 0, 0, page_width, page_height)
+            c.showPage()
+            c.save()
+
+
+def check_images_width(img_path):
+    """Resize image if its width exceeds the threshold"""
+    img = Image.open(img_path)
+    fname, fext = os.path.basename(img_path).split('.')
+    width, height = img.size
+
+    if width > DOUBLE_WIDTH:
+        new_width = width * 2
+        new_height = int(height * (new_width / width)) 
+
+        resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+        resized_img.save(get_full_path(fname, "", fext))
+
+
+
+def merge_pdfs(max_books, collection):
+    """Merge all individual PDFs into one"""
+    merger = PdfMerger()
+
+    for num in tqdm(range(max_books), desc="Merging PDFs"):
+        pdf_path = get_full_path('DBM_', num, 'pdf', folder=PDF_PATH, collection=collection)
+        if os.path.exists(pdf_path) and num not in BLACK_LIST:
+            merger.append(PdfReader(open(pdf_path, 'rb')))
+            #print(f'Joining page number {num}')
+        else:
+            pass
+            #print(f'PDF number {num} does not exist or is in BLACK LIST')
+    
+    merger.write(os.path.join(ROOT_DIRECTORY, f'DragonBallMultiverse-{collection}.pdf'))
     print('Join finished')
 
-
-""" this method copy all images in a PDF"""
-def img_to_pdf():
-    aux_X = 0
-    aux_Y = 0
-    num = 0
-    print('Checking images width...')
-    for num in range(MAX_BOOKS):
-        if (os.path.isfile(get_url_from_pne(img_temp, 'DBM_', num, 'jpg'))): # Different implementation if its jpg or png
-            check_images_width(get_url_from_pne(img_temp, 'DBM_', num, 'jpg'))
-        elif(os.path.isfile(get_url_from_pne(img_temp, 'DBM_', num, 'png'))):
-            check_images_width(get_url_from_pne(img_temp, 'DBM_', num, 'png'))
-
-    for num in range(MAX_BOOKS+len(EXTRA_IMAGES)):
-        try:
-            if num not in BLACK_LIST:
-                c = canvas.Canvas(get_url_from_pne(pdf_path, 'DBM_', num, 'pdf'))
-                if (os.path.isfile(get_url_from_pne(img_temp, 'DBM_', num, 'jpg'))): # Different implementation if its jpg or png
-                    if get_url_from_pne(img_temp, 'DBM_', num, 'jpg') in EXTRA_IMAGES:
-                        for aux in range(1, 3): # Catch images with more width than others
-                            c.drawImage(get_url_from_pne(img_temp, 'DBM_'+str(num)+'_',aux,'jpg'), aux_X, aux_Y, 21*cm, 28*cm)
-                            c.showPage()
-                            c.save()
-                    else:
-                        c.drawImage(get_url_from_pne(img_temp, 'DBM_', num, 'jpg'), aux_X, aux_Y, 21*cm, 28*cm) # Draw in PDF. 21 and 28 are images sizes
-                        c.showPage()
-                        c.save()
-                elif(os.path.isfile(get_url_from_pne(img_temp, 'DBM_', num, 'png'))):
-                    if get_url_from_pne(img_temp, 'DBM_', num, 'png') in EXTRA_IMAGES:
-                        for aux in range(1, 3):
-                            c.drawImage(get_url_from_pne(img_temp, 'DBM_'+str(num)+'_',aux,'png'), aux_X, aux_Y, 21*cm, 28*cm)
-                            c.showPage()
-                            c.save()
-                    else:
-                        c.drawImage(get_url_from_pne(img_temp, 'DBM_', num, 'png'), aux_X, aux_Y, 21*cm, 28*cm) # The same as above but for png
-                        c.showPage()
-                        c.save()
-
-                print("Book number "+str(num))
-            else:
-                print('Number %i is in BLACK LIST'%num)
-        except Exception as e:
-            print(e)
-            print("Number not found")
+def get_latest_chapter(collection):
+    """Return the latest chapter number for a given collection."""
+    base_url = "https://www.dragonball-multiverse.com/es/chapters.html"
+    parameters = {"dbmultiverse": "page",
+                "strip": "strip",
+                "namekseijin": "namekseijin",
+                "chibi-son-bra": "chibi-son-bra",
+                "dbm-colors": "dbm-colors"}
+    params = {'comic': parameters[collection]}
+    response = requests.get(base_url, params=params)
+    response.raise_for_status()  # Raise an exception for HTTP errors
+    
+    # Parse the HTML content
+    tree = lxml.html.fromstring(response.content)
+    
+    # XPath to find all anchor elements containing chapter numbers
+    chapter_links = tree.xpath('//a[text() and @href]')
+    
+    # Extract chapter numbers from the anchor text and find the maximum
+    chapter_numbers = [int(link.text_content().strip()) for link in chapter_links if link.text_content().strip().isdigit()]
+    
+    return max(chapter_numbers, default=None)
 
 
+def main():
+    """
+    DB Multiverse: dbmultiverse
+    Namekseijin Densetsu: namekseijin
+    DBMultiverse Colors: dbm-colors
+    Minicomic: strip
+    Chibi Son Bra did her best!: chibi-son-bra
+    """
+    valid_collections = ["dbmultiverse", "namekseijin", "dbm-colors", "strip", "chibi-son-bra"]
+    collection = sys.argv[1]  # Read the collection from the command line arguments
 
-def prepare_dirs(IMG_DIR, PDF_DIR):
-    if not os.path.exists(IMG_DIR):
-        os.makedirs(IMG_DIR)
-    if not os.path.exists(PDF_DIR):
-        os.makedirs(PDF_DIR)
+    # Check for valid collection values to prevent potential security risks
+    if collection not in valid_collections:
+        print(f"Invalid collection: {collection}. Please use one of the following: {', '.join(valid_collections)}")
+        return
+    
+    max_books = get_latest_chapter(collection)
+    print(f"Downloading {max_books} chapters... for {collection}")
 
-def check_images_width(url = 'images/DBM_8.jpg'):
-    img = Image.open(url)
-    fname, fext = url.split("\\")[-1].split(".")[0], url.split("\\")[-1].split(".")[1]
-    print("URL: %s"%url)
-    print("%s - %s"%(fname, fext))
-    width, height = img.size[0], img.size[1]
-    if width > 1000:
-        img_2, img_1 = img.crop((width//2, 0, width, height)), img.crop((0, 0, width//2, height)) #left - top - right - bottom
-        print("2nd: a%s.%s"%(fname, fext))
-        print(os.path.join(img_temp, fname+'_1.'+fext))
-        filename = "%s_1.%s"%(fname, fext)
-        img_1.save(os.path.join(img_temp, filename))
-        filename = "%s_2.%s"%(fname, fext)
-        img_2.save(os.path.join(img_temp, filename))
-        EXTRA_IMAGES.append(url)
-    else:
-        print("NO EXTRA IMAGES")
+    prepare_dirs(collection=collection)
+    download_images(max_books, collection=collection)
+    
+    for num in range(max_books):
+        for fmt in ['jpg', 'png']:
+            img_path = get_full_path('DBM_', num, fmt, collection=collection)
+            if os.path.isfile(img_path):
+                check_images_width(img_path)
 
-def all():
-    download()
-    img_to_pdf()
-    merge_pdf()
+    convert_img_to_pdf(max_books, collection=collection)
+    merge_pdfs(max_books, collection)
     print('FINISH')
 
-""" interactive user mode """
-print("=============================================")
-print("---------Script realizado por BashRC---------")
-print("--------Para mis amigos de forocarros--------")
-print("---------------------------------------------")
-print("=============================================\n")
-MAX_BOOKS = 0
+
 if __name__ == '__main__':
-    MAX_BOOKS = int(sys.argv[1])
-    try:
-        all()
-    except Exception as e:
-        print(e)
+    main()

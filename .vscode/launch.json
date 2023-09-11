@@ -1,0 +1,17 @@
+{
+  "configurations": [
+    {
+      "args": ["22"],
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "name": "Python: Current File",
+      "program": "${file}",
+      "request": "launch",
+      "type": "python"
+    }
+  ],
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0"
+}

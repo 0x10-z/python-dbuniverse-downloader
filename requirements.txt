@@ -1,9 +1,9 @@
 #need to install zlib1g-dev libxml2 libxml2-dev libxslt-dev build-essential python-dev
-Pillow==2.6.1
-PyPDF2==1.23
-argparse==1.2.1
-cssselect==0.9.1
-lxml==3.4.0
-reportlab==3.1.8
-requests==2.4.3
-wsgiref==0.1.2
+Pillow==10.0.0
+pypdf==3.16.0
+argparse==1.4.0
+cssselect==1.2.0
+lxml==4.9.3
+reportlab==4.0.4
+requests==2.31.0
+tqdm==4.66.1
