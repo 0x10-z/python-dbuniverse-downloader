@@ -147,7 +147,7 @@ def process_image(num, collection="dbmultiverse"):
             c.save()
 
 
-def check_images_width(img_path):
+def check_images_width(img_path, collection):
     """Resize image if its width exceeds the threshold"""
     img = Image.open(img_path)
     fname, fext = os.path.basename(img_path).split('.')
@@ -158,7 +158,7 @@ def check_images_width(img_path):
         new_height = int(height * (new_width / width)) 
 
         resized_img = img.resize((new_width, new_height), Image.LANCZOS)
-        resized_img.save(get_full_path(fname, "", fext))
+        resized_img.save(get_full_path(fname, "", fext, collection=collection))
 
 
 

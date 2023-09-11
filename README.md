@@ -1,8 +1,14 @@
+Por supuesto, aquí está tu README actualizado:
+
+---
+
 # 🐉 python-dbuniverse-downloader
 
 ## 🌟 Overview
 
 A versatile PDF downloader for the beloved Dragon Ball comic hosted on [Dragon Ball Multiverse](http://dragonball-multiverse.com). A huge shoutout and gratitude to the creators and maintainers of the Dragon Ball Multiverse website for their exceptional work and content! 💖
+
+With the magic of GitHub Actions, every time this repo springs into action, the latest PDFs of all collections are magically conjured for your convenience! 🪄✨
 
 ## 🌈 Features:
 
@@ -94,3 +100,5 @@ Sit back and relax ☕️. Once the program finishes, dive right into the comic!
 ---
 
 Happy reading, fellow Saiyans! 🚀🌌
+
+---
