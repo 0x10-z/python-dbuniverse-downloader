@@ -3,7 +3,7 @@ name: Generate Collections
 on:
   push:
     branches:
-      - main # or whichever branch you use
+      - master
 
 jobs:
   build:
