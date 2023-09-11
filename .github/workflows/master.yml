@@ -42,9 +42,12 @@ jobs:
           name: collection-${{ matrix.collection }}
           path: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
 
+      - name: Get current date
+        run: echo "CURRENT_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+
       - name: Create Release and Upload Asset
         uses: elgohr/Github-Release-Action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
-          title: DragonBallMultiverse-${{ matrix.collection }}-${{ github.sha }}
+          title: DragonBallMultiverse-${{ matrix.collection }}-latest
