@@ -1,7 +1,3 @@
-Por supuesto, aquí está tu README actualizado:
-
----
-
 # 🐉 python-dbuniverse-downloader
 
 ## 🌟 Overview
@@ -100,5 +96,3 @@ Sit back and relax ☕️. Once the program finishes, dive right into the comic!
 ---
 
 Happy reading, fellow Saiyans! 🚀🌌
-
----
