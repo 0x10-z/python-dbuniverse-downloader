@@ -41,3 +41,16 @@ jobs:
         with:
           name: collection-${{ matrix.collection }}
           path: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
+
+      - name: Create Release and Upload Asset
+        uses: gh-actions/create-release@v1
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}
+          tag_name: DragonBallMultiverse-${{ matrix.collection }}-${{ github.sha }}
+          release_name: DragonBallMultiverse-${{ matrix.collection }} Release of ${{ github.sha }}
+          body: New release for DragonBallMultiverse-${{ matrix.collection }}
+          draft: false
+          prerelease: false
+          asset_path: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
+          asset_name: DragonBallMultiverse-${{ matrix.collection }}.pdf
+          asset_content_type: application/pdf
