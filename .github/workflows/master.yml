@@ -49,6 +49,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           # token: ${{ secrets.GH_TOKEN }}
-          tag: ${{ env.CURRENT_DATE }}
+          allowUpdates: true
+          tag: dbm-${{ matrix.collection }}-latest
           commit: ${{ github.sha }}
           artifacts: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
