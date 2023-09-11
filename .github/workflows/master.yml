@@ -45,9 +45,8 @@ jobs:
       - name: Get current date
         run: echo "CURRENT_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
-      - name: Create Release and Upload Asset
-        uses: elgohr/Github-Release-Action@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Release DragonBallMultiverse-${{ matrix.collection }}.pdf
+        uses: softprops/action-gh-release@v1
         with:
-          title: DragonBallMultiverse-${{ matrix.collection }}-latest
+          # token: ${{ secrets.GH_TOKEN }}
+          files: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
