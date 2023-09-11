@@ -228,7 +228,7 @@ def main():
         for fmt in ['jpg', 'png']:
             img_path = get_full_path('DBM_', num, fmt, collection=collection)
             if os.path.isfile(img_path):
-                check_images_width(img_path)
+                check_images_width(img_path, collection=collection)
 
     convert_img_to_pdf(max_books, collection=collection)
     merge_pdfs(max_books, collection)
