@@ -8,17 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        collection:
-          [
-            "dbmultiverse",
-            "strip",
-            "namekseijin",
-            "dbm-colors",
-            "chibi-son-bra",
-          ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -33,23 +22,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate Collection ${{ matrix.collection }}
-        run: python dbmultiverse.py ${{ matrix.collection }}
-
-      - name: Upload Collection ${{ matrix.collection }} to GitHub Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: collection-${{ matrix.collection }}
-          path: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
+      - name: Generate Collection
+        run: python dbmultiverse.py all
 
       - name: Get current date
         run: echo "CURRENT_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
-      - name: Release DragonBallMultiverse-${{ matrix.collection }}.pdf
+      - name: Release DragonBallMultiverse PDFs
         uses: ncipollo/release-action@v1
         with:
           # token: ${{ secrets.GH_TOKEN }}
           allowUpdates: true
-          tag: dbm-${{ matrix.collection }}-latest
+          tag: DragonBallMultiverse-PDF-latest
           commit: ${{ github.sha }}
-          artifacts: ./DragonBallMultiverse-${{ matrix.collection }}.pdf
+          artifacts: ./DragonBallMultiverse-dbmultiverse.pdf,./DragonBallMultiverse-dbm-colors.pdf,./DragonBallMultiverse-chibi-son-bra.pdf,./DragonBallMultiverse-namekseijin.pdf,./DragonBallMultiverse-strip.pdf
