@@ -144,7 +144,9 @@ def download_images(max_books, collection="dbmultiverse"):
                 ),
                 total=int(max_books),
                 desc=f"Downloading {collection}",
-                colour=TQDM_COLORS[VALID_COLLECTIONS.index(collection)],
+                colour=TQDM_COLORS[
+                    VALID_COLLECTIONS.index(collection) % len(TQDM_COLORS)
+                ],
             )
         )
 
