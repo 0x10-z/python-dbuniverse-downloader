@@ -1,19 +1,22 @@
-import time
-import lxml.html
+import io
 import os
-from urllib.parse import urljoin, urlparse, parse_qs
-from pypdf import PdfMerger, PdfReader
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import cm
-from PIL import Image
-import sys
-import requests
-from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor
 import re
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import parse_qs, urljoin, urlparse
+
+import lxml.html
+import requests
+from PIL import Image
+from pypdf import PdfReader, PdfWriter
+from reportlab.lib.units import cm
+from reportlab.pdfgen import canvas
+from tqdm import tqdm
 
 # LIMIT number of pixels can be processed with PILLOW
 Image.MAX_IMAGE_PIXELS = 9000000000
+MAX_POOL_WORKERS = 5
 ROOT_DIRECTORY = os.path.dirname(__file__)
 PDF_PATH = os.path.join(ROOT_DIRECTORY, "pdf")
 IMG_TEMP = os.path.join(ROOT_DIRECTORY, "images")
@@ -59,6 +62,17 @@ def get_link(number, collection="dbmultiverse"):
         return f"https://www.dragonball-multiverse.com/es/strip-{number}.html"
     elif collection == "chibi-son-bra":
         return f"https://www.dragonball-multiverse.com/es/chibi-son-bra-{number}.html"
+
+
+def human_readable_size(bytes_size):
+    if bytes_size < 1024:
+        return f"{bytes_size} B"
+    elif bytes_size < 1024**2:
+        return f"{round(bytes_size / 1024, 2)} KB"
+    elif bytes_size < 1024**3:
+        return f"{round(bytes_size / (1024 ** 2), 2)} MB"
+    else:
+        return f"{round(bytes_size / (1024 ** 3), 2)} GB"
 
 
 def get_img_url_from_element(element, collection):
@@ -135,7 +149,7 @@ def download_image(number, collection="dbmultiverse"):
 
 def download_images(max_books, collection="dbmultiverse"):
     """Download images from the web using a thread pool"""
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=MAX_POOL_WORKERS) as executor:
         list(
             tqdm(
                 executor.map(
@@ -158,7 +172,7 @@ def convert_img_to_pdf(max_books, collection="dbmultiverse"):
     tasks = [num for num in range(max_books) if num not in BLACK_LIST]
 
     # Use ThreadPoolExecutor to process images in parallel
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=MAX_POOL_WORKERS) as executor:
         list(
             tqdm(
                 executor.map(lambda num: process_image(num, collection), tasks),
@@ -201,21 +215,21 @@ def process_image(num, collection="dbmultiverse"):
 
 def check_images_width(img_path, collection):
     """Resize image if its width exceeds the threshold"""
-    img = Image.open(img_path)
-    fname, fext = os.path.basename(img_path).split(".")
-    width, height = img.size
+    with Image.open(img_path) as img:
+        fname, fext = os.path.basename(img_path).split(".")
+        width, height = img.size
 
-    if width > DOUBLE_WIDTH:
-        new_width = width * 2
-        new_height = int(height * (new_width / width))
+        if width > DOUBLE_WIDTH:
+            new_width = width * 2
+            new_height = int(height * (new_width / width))
 
-        resized_img = img.resize((new_width, new_height), Image.LANCZOS)
-        resized_img.save(get_full_path(fname, "", fext, collection=collection))
+            resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+            resized_img.save(get_full_path(fname, "", fext, collection=collection))
 
 
 def merge_pdfs(max_books, collection):
     """Merge all individual PDFs into one"""
-    merger = PdfMerger()
+    writer = PdfWriter()
 
     for num in tqdm(
         range(max_books),
@@ -226,13 +240,21 @@ def merge_pdfs(max_books, collection):
             "DBM_", num, "pdf", folder=PDF_PATH, collection=collection
         )
         if os.path.exists(pdf_path) and num not in BLACK_LIST:
-            merger.append(PdfReader(open(pdf_path, "rb")))
+            with open(pdf_path, "rb") as f:
+                reader = PdfReader(f)
+                writer.append(reader)
+
             # print(f'Joining page number {num}')
         else:
             pass
             # print(f'PDF number {num} does not exist or is in BLACK LIST')
 
-    merger.write(os.path.join(ROOT_DIRECTORY, f"DragonBallMultiverse-{collection}.pdf"))
+    output_filename = os.path.join(
+        ROOT_DIRECTORY, f"DragonBallMultiverse-{collection}.pdf"
+    )
+    writer.write(output_filename)
+    final_size = human_readable_size(os.path.getsize(output_filename))
+    print(f"PDF size: {final_size}")
 
 
 def get_latest_chapter(collection):
@@ -295,7 +317,7 @@ def main():
     collection = sys.argv[1]
 
     if collection == "all":
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        with ThreadPoolExecutor(max_workers=MAX_POOL_WORKERS) as executor:
             executor.map(process_collection, VALID_COLLECTIONS)
     else:
         # Check for valid collection values to prevent potential security risks

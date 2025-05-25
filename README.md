@@ -50,6 +50,12 @@ $ python dbmultiverse.py <collection_name>
 $ python dbmultiverse.py dbmultiverse
 ```
 
+If you want to download all at once
+
+```bash
+$ python dbmultiverse.py all
+```
+
 **Available Collections**:
 
 - `dbmultiverse`: Main DB Multiverse series.
@@ -69,6 +75,19 @@ Sit back and relax ☕️. Once the program finishes, dive right into the comic!
 5. **Merging PDFs:** All the PDFs are combined to form a single epic document.
 
 ## 📜 Changelog
+
+### 0.4
+
+📅 **25 May 2025**
+
+- Fixed some memory leaks
+- Updated library versions to the latest:
+  - `Pillow`
+  - `pypdf`
+  - `cssselect`
+  - `lxml`
+  - `reportlab`
+  - `tqdm`
 
 ### 0.3
 
